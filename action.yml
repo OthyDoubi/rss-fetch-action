@@ -1,0 +1,27 @@
+name: 'RSS Feed Fetch Action'
+description: 'Fetches an RSS feed and saves it to a file'
+author: 'Christopher C. Smith <christopher.smith@promptlytechnologies.com>'
+branding:
+  icon: 'rss'
+
+inputs:
+  feed_url:
+    description: 'URL or JSON array of URLs of the RSS feed(s) to fetch'
+    required: true
+  file_path:
+    description: 'Relative file path or JSON array of file paths at which to save the fetched RSS feed(s)'
+    required: true
+  parser_options:
+    description: 'JSON string for parser options'
+    required: false
+  fetch_options:
+    description: 'JSON string for fetch options'
+    required: false
+  remove_published:
+    description: 'Remove the published date from the feed for easier diffing'
+    required: false
+    default: false
+
+runs:
+  using: node20
+  main: dist/index.js
