@@ -22,5 +22,8 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+    - name: List node_modules (Debug)
+      run: ls -la node_modules
+
     - name: Run Upwork job fetch script
       run: node src/index.js
