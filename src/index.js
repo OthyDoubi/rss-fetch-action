@@ -2,7 +2,11 @@
 async function fetchJobsAndNotify() {
     try {
         // 1. Récupérer le contenu de la page
+        
+        const axios = require('axios');
+        console.log('Axios imported:', !!axios);  // Ajoute cette ligne pour vérifier si axios est bien importé
         const response = await axios.get(url);
+
         const html = response.data;
 
         // 2. Analyser les données pour extraire les offres de travail
