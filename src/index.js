@@ -1,13 +1,3 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
-const { WebClient } = require('@slack/web-api');
-const RSS = require('rss');
-const fs = require('fs');
-
-// Configuration
-const url = 'https://www.upwork.com/nx/search/jobs/?client_hires=1-9,10-&location=Canada&nbs=1&q=graphic%20designer&sort=recency';
-const slackWebhookUrl = 'https://hooks.slack.com/services/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';
-
 // Fonction principale
 async function fetchJobsAndNotify() {
     try {
@@ -56,12 +46,9 @@ async function fetchJobsAndNotify() {
         fs.writeFileSync('rss.xml', rss);
 
         // 4. Envoyer des notifications sur Slack
-        const slackClient = new WebClient(slackWebhookUrl);
-
         for (const job of jobs) {
-            await slackClient.chat.postMessage({
-                text: `New Job Posted: *${job.title}*\n${job.description}\n<${job.link}|View Job>`,
-                channel: '#upwork-international',  // Utilisation du canal spécifié
+            await axios.post(slackWebhookUrl, {
+                text: `New Job Posted: *${job.title}*\n${job.description}\n<${job.link}|View Job>`
             });
         }
 
