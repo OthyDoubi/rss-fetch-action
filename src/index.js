@@ -11,8 +11,12 @@ const slackWebhookUrl = 'https://hooks.slack.com/services/T073JDFANDV/B07HTP2SGB
 // Fonction principale
 async function fetchJobsAndNotify() {
     try {
-        // 1. Récupérer le contenu de la page
-        const response = await axios.get(url);
+        // 1. Récupérer le contenu de la page avec le header User-Agent
+        const response = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+            }
+        });
         const html = response.data;
 
         // 2. Analyser les données pour extraire les offres de travail
