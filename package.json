@@ -2,7 +2,7 @@
   "name": "rss-fetch-action",
   "description": "Javascript GitHub Action to fetch an RSS feed",
   "version": "2.1.0",
-  "author": "Christopher C. Smith <christopher.smith@promptlytechnologies.com",
+  "author": "Christopher C. Smith <christopher.smith@promptlytechnologies.com>",
   "private": true,
   "homepage": "https://github.com/Promptly-Technologies-LLC/rss-fetch-action#readme",
   "repository": {
@@ -66,7 +66,7 @@
   },
   "dependencies": {
     "@actions/core": "^1.10.1",
-    "@extractus/feed-extractor": "^7.1.3"
+    "@extractus/feed-extractor": "^7.1.3",
     "axios": "^0.21.1",
     "cheerio": "^1.0.0-rc.10",
     "@slack/web-api": "^6.0.0",
