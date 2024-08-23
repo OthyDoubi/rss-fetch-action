@@ -17,13 +17,10 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '14'  # Spécifie la version de Node.js à utiliser
+        node-version: '20'  # Spécifie la version de Node.js à utiliser
 
     - name: Install dependencies
       run: npm install
-
-    - name: List node_modules (Debug)
-      run: ls -la node_modules
 
     - name: Run Upwork job fetch script
       run: node src/index.js
