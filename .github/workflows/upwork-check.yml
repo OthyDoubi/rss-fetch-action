@@ -2,7 +2,7 @@ name: Check Upwork Jobs
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # Exécute le script toutes les 5 minutes
+    - cron: '*/1 * * * *'  # Exécute le script toutes les 5 minutes
   workflow_dispatch:  # Permet de déclencher manuellement le workflow si nécessaire
 
 jobs:
