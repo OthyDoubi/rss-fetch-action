@@ -2,8 +2,7 @@ name: Check Upwork Jobs
 
 on:
   schedule:
-    # Exécute le script toutes les heures
-    - cron: '* * * * *'
+    - cron: '*/5 * * * *'  # Exécute le script toutes les 5 minutes
   workflow_dispatch:  # Permet de déclencher manuellement le workflow si nécessaire
 
 jobs:
@@ -17,10 +16,10 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '20'  # Spécifie la version de Node.js à utiliser
+        node-version: '20'
 
     - name: Install dependencies
       run: npm install
 
-    - name: Run Upwork job fetch script
+    - name: Run Puppeteer script
       run: node src/index.js
