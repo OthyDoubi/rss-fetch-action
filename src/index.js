@@ -1,79 +1,41 @@
+const puppeteer = require('puppeteer');
 const axios = require('axios');
-const cheerio = require('cheerio');
-const { WebClient } = require('@slack/web-api');
-const RSS = require('rss');
-const fs = require('fs');
 
-// Configuration
-const url = 'https://www.upwork.com/nx/search/jobs/?client_hires=1-9,10-&location=Canada&nbs=1&q=graphic%20designer&sort=recency';
 const slackWebhookUrl = 'https://hooks.slack.com/services/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';
+const upworkUrl = 'https://www.upwork.com/nx/search/jobs/?client_hires=1-9,10-&location=Canada&nbs=1&q=graphic%20designer&sort=recency';
 
-// Fonction principale
-async function fetchJobsAndNotify() {
-    try {
-        // 1. Récupérer le contenu de la page avec le header User-Agent
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-            }
-        });
-        const html = response.data;
+let lastJobPosted = null;
 
-        // 2. Analyser les données pour extraire les offres de travail
-        const $ = cheerio.load(html);
-        const jobs = [];
+(async () => {
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(upworkUrl);
 
-        $('.job-tile').each((index, element) => {
-            const title = $(element).find('.job-title a').text().trim();
-            const link = 'https://www.upwork.com' + $(element).find('.job-title a').attr('href');
-            const description = $(element).find('.job-description').text().trim();
-
-            if (title && link) {
-                jobs.push({ title, link, description });
-            }
+    while (true) {
+        await page.reload();
+        
+        const jobs = await page.evaluate(() => {
+            return Array.from(document.querySelectorAll('.job-tile')).map(job => ({
+                title: job.querySelector('.job-title a').textContent.trim(),
+                link: 'https://www.upwork.com' + job.querySelector('.job-title a').getAttribute('href'),
+                description: job.querySelector('.job-description').textContent.trim(),
+                postedAt: job.querySelector('.client-info').textContent.trim()
+            }));
         });
 
-        if (jobs.length === 0) {
-            console.log('No new jobs found.');
-            return;
+        if (jobs.length > 0 && jobs[0].title !== lastJobPosted) {
+            lastJobPosted = jobs[0].title;
+
+            const message = {
+                text: `Nouveau job détecté sur Upwork : *${jobs[0].title}*\nDescription: ${jobs[0].description}\nLien: ${jobs[0].link}`
+            };
+
+            await axios.post(slackWebhookUrl, message);
         }
 
-        // 3. Générer un flux RSS
-        const feed = new RSS({
-            title: 'Upwork Graphic Designer Jobs',
-            description: 'Latest graphic designer jobs on Upwork',
-            feed_url: 'http://example.com/rss.xml',
-            site_url: 'https://www.upwork.com',
-        });
-
-        jobs.forEach(job => {
-            feed.item({
-                title: job.title,
-                description: job.description,
-                url: job.link,
-                guid: job.link,
-            });
-        });
-
-        // Sauvegarder le flux RSS dans un fichier
-        const rss = feed.xml({ indent: true });
-        fs.writeFileSync('rss.xml', rss);
-
-        // 4. Envoyer des notifications sur Slack
-        const slackClient = new WebClient(slackWebhookUrl);
-
-        for (const job of jobs) {
-            await slackClient.chat.postMessage({
-                text: `New Job Posted: *${job.title}*\n${job.description}\n<${job.link}|View Job>`,
-                channel: '#upwork-international',  // Utilisation du canal spécifié
-            });
-        }
-
-        console.log('Notifications sent successfully!');
-    } catch (error) {
-        console.error('Error fetching or processing jobs:', error);
+        console.log(`Checked at ${new Date().toISOString()} - Next check in 5 minutes.`);
+        await new Promise(r => setTimeout(r, 5 * 60 * 1000)); // Attendre 5 minutes avant de recharger
     }
-}
 
-// Exécuter la fonction principale
-fetchJobsAndNotify();
+    await browser.close();
+})();
