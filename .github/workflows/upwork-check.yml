@@ -24,7 +24,7 @@ jobs:
         node-version: '20'
 
     - name: Install dependencies
-      run: npm ci  # Faster and consistent installs
+      run: npm ci  # or switch to npm install if the issue persists
 
     - name: Run the script
       run: node src/index.js
