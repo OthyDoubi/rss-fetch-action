@@ -1,33 +1,30 @@
 name: Fetch and Notify
 
 on:
-  schedule:
-    - cron: '*/1 * * * *'  # Exécuter toutes les minutes
-  workflow_dispatch:  # Permet de déclencher manuellement
+  workflow_dispatch:
 
 jobs:
   fetch-and-notify:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Cache Node.js modules
       uses: actions/cache@v3
       with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        path: node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
 
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '20'  # Spécifiez la version de Node.js
+        node-version: '20'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci  # Faster and consistent installs
 
     - name: Run the script
       run: node src/index.js
