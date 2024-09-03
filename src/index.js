@@ -19,7 +19,7 @@ async function fetchJobsAndNotify() {
         const page = await browser.newPage();
 
         // 2. Configurer un délai d'attente par défaut pour les actions de navigation et de recherche
-        await page.setDefaultNavigationTimeout(120000); // 2 minutes
+        await page.setDefaultNavigationTimeout(180000); // 3 minutes
 
         // 3. Naviguer vers la page et attendre que le chargement du réseau soit terminé
         await page.goto(url, {
@@ -27,7 +27,7 @@ async function fetchJobsAndNotify() {
         });
 
         // 4. Attendre que les éléments soient disponibles avec un délai d'attente prolongé
-        await page.waitForSelector('.job-tile', { timeout: 60000 }); // 1 minute
+        await page.waitForSelector('.job-tile', { timeout: 90000 }); // 1.5 minutes
 
         // 5. Récupérer le contenu HTML
         const html = await page.content();
