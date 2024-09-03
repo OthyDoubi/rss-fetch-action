@@ -1,6 +1,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
+const { WebClient } = require('@slack/web-api');
 const RSS = require('rss');
 const fs = require('fs');
 
@@ -11,30 +12,23 @@ const slackWebhookUrl = 'https://hooks.slack.com/services/T073JDFANDV/B07HTP2SGB
 async function fetchJobsAndNotify() {
     let browser;
     try {
-        // 1. Lancer Puppeteer
         browser = await puppeteer.launch({
-            headless: 'new', // Utilisation du nouveau mode headless
+            headless: 'new', 
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
         const page = await browser.newPage();
+        await page.setDefaultNavigationTimeout(120000);
 
-        // 2. Configurer un délai d'attente par défaut pour les actions de navigation et de recherche
-        await page.setDefaultNavigationTimeout(180000); // 3 minutes
-
-        // 3. Naviguer vers la page et attendre que le chargement du réseau soit terminé
         await page.goto(url, {
             waitUntil: 'networkidle0',
         });
 
-        // 4. Attendre que les éléments soient disponibles avec un délai d'attente prolongé
-        await page.waitForSelector('.job-tile', { timeout: 90000 }); // 1.5 minutes
+        await page.waitForSelector('.job-tile', { timeout: 60000 });
 
-        // 5. Récupérer le contenu HTML
         const html = await page.content();
         const $ = cheerio.load(html);
         const jobs = [];
 
-        // 6. Extraire les données
         $('.job-tile').each((index, element) => {
             const title = $(element).find('.job-title a').text().trim();
             const link = 'https://www.upwork.com' + $(element).find('.job-title a').attr('href');
@@ -50,7 +44,6 @@ async function fetchJobsAndNotify() {
             return;
         }
 
-        // 7. Générer un flux RSS
         const feed = new RSS({
             title: 'Upwork Graphic Designer Jobs',
             description: 'Latest graphic designer jobs on Upwork',
@@ -67,13 +60,12 @@ async function fetchJobsAndNotify() {
             });
         });
 
-        // Sauvegarder le flux RSS dans un fichier
         const rss = feed.xml({ indent: true });
         fs.writeFileSync('rss.xml', rss);
 
-        // 8. Envoyer des notifications sur Slack
+        const slackClient = new WebClient(slackWebhookUrl);
         for (const job of jobs) {
-            await axios.post(slackWebhookUrl, {
+            await slackClient.chat.postMessage({
                 text: `New Job Posted: *${job.title}*\n${job.description}\n<${job.link}|View Job>`,
                 channel: '#upwork-international',
             });
@@ -89,5 +81,4 @@ async function fetchJobsAndNotify() {
     }
 }
 
-// Exécuter la fonction principale
 fetchJobsAndNotify();
