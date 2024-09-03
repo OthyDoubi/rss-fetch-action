@@ -1,9 +1,9 @@
-name: Check Upwork Jobs
+name: Fetch and Notify
 
 on:
   schedule:
-    - cron: '*/1 * * * *'  # Exécute le script toutes les 5 minutes
-  workflow_dispatch:  # Permet de déclencher manuellement le workflow si nécessaire
+    - cron: '*/1 * * * *'  # Exécuter toutes les minutes
+  workflow_dispatch:  # Permet de déclencher manuellement
 
 jobs:
   fetch-and-notify:
@@ -13,13 +13,21 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+    - name: Cache Node.js modules
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '20'
+        node-version: '20'  # Spécifiez la version de Node.js
 
     - name: Install dependencies
       run: npm install
 
-    - name: Run Puppeteer script
+    - name: Run the script
       run: node src/index.js
