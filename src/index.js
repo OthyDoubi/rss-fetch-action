@@ -1,8 +1,6 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
-
-const { WebClient } = require('@slack/web-api');
 const RSS = require('rss');
 const fs = require('fs');
 
@@ -15,20 +13,20 @@ async function fetchJobsAndNotify() {
     try {
         // 1. Lancer Puppeteer
         browser = await puppeteer.launch({
-            headless: true,
+            headless: 'new', // Utilisation du nouveau mode headless
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
         const page = await browser.newPage();
 
-        // 2. Configurer un délai d'attente plus long pour la navigation
+        // 2. Configurer un délai d'attente par défaut pour les actions de navigation et de recherche
         await page.setDefaultNavigationTimeout(120000); // 2 minutes
 
-        // 3. Naviguer vers la page
+        // 3. Naviguer vers la page et attendre que le chargement du réseau soit terminé
         await page.goto(url, {
-            waitUntil: 'networkidle2',
+            waitUntil: 'networkidle0',
         });
 
-        // 4. Attendre que les éléments soient disponibles avec un délai d'attente plus long
+        // 4. Attendre que les éléments soient disponibles avec un délai d'attente prolongé
         await page.waitForSelector('.job-tile', { timeout: 60000 }); // 1 minute
 
         // 5. Récupérer le contenu HTML
@@ -74,10 +72,8 @@ async function fetchJobsAndNotify() {
         fs.writeFileSync('rss.xml', rss);
 
         // 8. Envoyer des notifications sur Slack
-        const slackClient = new WebClient(slackWebhookUrl);
-
         for (const job of jobs) {
-            await slackClient.chat.postMessage({
+            await axios.post(slackWebhookUrl, {
                 text: `New Job Posted: *${job.title}*\n${job.description}\n<${job.link}|View Job>`,
                 channel: '#upwork-international',
             });
