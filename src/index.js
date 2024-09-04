@@ -22,7 +22,7 @@ async function fetchJobsAndNotify() {
         await page.waitForTimeout(30000); // Délai supplémentaire de 30 secondes
 
         // Liste des sélecteurs possibles
-        const selectors = ['.up-job-card', '.job-listing', '.job-card', '.job-listing-item'];
+        const selectors = ['.up-job-card', '.job-listing', '.job-tile', '.job-listing-item'];
 
         let activeSelector = null;
 
