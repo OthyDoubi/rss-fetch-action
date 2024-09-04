@@ -23,28 +23,25 @@ async function fetchJobsAndNotify() {
         // Aller à l'URL spécifiée
         await page.goto(url, { waitUntil: 'networkidle2' });
 
-        // Prendre une capture d'écran pour déboguer
-        await page.screenshot({ path: 'screenshot.png' });
+        // Attendre un moment pour s'assurer que tous les éléments sont chargés
+        await page.waitForTimeout(5000);
 
-        // Vérifier si l'élément est chargé de manière asynchrone
-        try {
-            await page.waitForSelector('.job-tile', { timeout: 60000 });
-        } catch (error) {
-            console.log('Sélecteur .job-tile non trouvé. Tentative avec un autre sélecteur.');
+        // Vérifier si le sélecteur est présent
+        const isSelectorPresent = await page.evaluate(() => {
+            return document.querySelector('.job-tile') !== null;
+        });
 
-            // Essayer un autre sélecteur potentiel, si nécessaire
-            await page.waitForSelector('.new-job-tile', { timeout: 60000 });
+        if (!isSelectorPresent) {
+            console.error('Le sélecteur `.job-tile` n\'a pas été trouvé.');
+            return;
         }
 
-        // Obtenir le contenu HTML de la page
+        // Extraire les informations des jobs
         const html = await page.content();
-        console.log(html);
-
         const $ = cheerio.load(html);
         const jobs = [];
 
-        // Extraire les informations des jobs
-        $('.job-tile, .new-job-tile').each((index, element) => {
+        $('.job-tile').each((index, element) => {
             const title = $(element).find('.job-title a').text().trim();
             const link = 'https://www.upwork.com' + $(element).find('.job-title a').attr('href');
             const description = $(element).find('.job-description').text().trim();
