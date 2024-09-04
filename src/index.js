@@ -26,13 +26,8 @@ async function fetchJobsAndNotify() {
         // Prendre une capture d'écran pour déboguer
         await page.screenshot({ path: 'screenshot.png' });
 
-        // Essayer un sélecteur plus général
-        try {
-            await page.waitForSelector('div[class^="job-"]', { timeout: 60000 });
-        } catch (error) {
-            console.log('Sélecteur général `div[class^="job-"]` non trouvé.');
-            return;
-        }
+        // Utiliser le nouveau sélecteur trouvé
+        await page.waitForSelector('.up-job-card, .job-listing', { timeout: 60000 });
 
         // Obtenir le contenu HTML de la page et l'afficher pour déboguer
         const html = await page.content();
@@ -42,7 +37,7 @@ async function fetchJobsAndNotify() {
         const jobs = [];
 
         // Extraire les informations des jobs
-        $('div[class^="job-"]').each((index, element) => {
+        $('.up-job-card, .job-listing').each((index, element) => {
             const title = $(element).find('.job-title a').text().trim();
             const link = 'https://www.upwork.com' + $(element).find('.job-title a').attr('href');
             const description = $(element).find('.job-description').text().trim();
