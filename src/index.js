@@ -19,7 +19,7 @@ async function fetchJobsAndNotify() {
         });
 
         const page = await browser.newPage();
-        await page.setDefaultNavigationTimeout(120000); // Timeout de 2 minutes pour la navigation
+        await page.setDefaultNavigationTimeout(240000); // Timeout de 4 minutes pour la navigation
 
         // Aller à la page d'Upwork
         await page.goto(url, { waitUntil: 'networkidle0' });
