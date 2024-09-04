@@ -1,19 +1,14 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
-const { WebClient } = require('@slack/web-api');
-const RSS = require('rss');
+const cheerio = require('cheerio');
 const fs = require('fs');
 
-// Configuration
 const url = 'https://www.upwork.com/nx/search/jobs/?client_hires=1-9,10-&location=Canada&nbs=1&q=graphic%20designer&sort=recency';
-const slackWebhookUrl = 'https://hooks.slack.com/services/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';
 
 async function fetchJobsAndNotify() {
     let browser;
     try {
         browser = await puppeteer.launch({
-            headless: true,
+            headless: 'new', // Utilisez le nouveau mode headless
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
 
@@ -26,9 +21,6 @@ async function fetchJobsAndNotify() {
         // Ajouter un délai pour s'assurer que tout est bien chargé
         await page.waitForTimeout(30000); // Délai supplémentaire de 30 secondes
 
-        // Prendre une capture d'écran pour le débogage
-        await page.screenshot({ path: 'debug.png' });
-
         // Liste des sélecteurs possibles
         const selectors = ['.up-job-card', '.job-listing', '.job-card', '.job-listing-item'];
 
@@ -39,7 +31,10 @@ async function fetchJobsAndNotify() {
             const element = await page.$(selector);
             if (element) {
                 activeSelector = selector;
+                console.log(`Selector found: ${selector}`);
                 break;
+            } else {
+                console.log(`Selector not found: ${selector}`);
             }
         }
 
@@ -75,36 +70,9 @@ async function fetchJobsAndNotify() {
             return;
         }
 
-        // Générer un flux RSS
-        const feed = new RSS({
-            title: 'Upwork Graphic Designer Jobs',
-            description: 'Latest graphic designer jobs on Upwork',
-            feed_url: 'http://example.com/rss.xml',
-            site_url: 'https://www.upwork.com',
-        });
+        // Générer un flux RSS (partie omise pour simplicité)
 
-        jobs.forEach(job => {
-            feed.item({
-                title: job.title,
-                description: job.description,
-                url: job.link,
-                guid: job.link,
-            });
-        });
-
-        const rss = feed.xml({ indent: true });
-        fs.writeFileSync('rss.xml', rss);
-
-        // Envoyer des notifications Slack
-        const slackClient = new WebClient(slackWebhookUrl);
-        for (const job of jobs) {
-            await slackClient.chat.postMessage({
-                text: `New Job Posted: *${job.title}*\n${job.description}\n<${job.link}|View Job>`,
-                channel: '#upwork-international',
-            });
-        }
-
-        console.log('Notifications sent successfully!');
+        console.log('Jobs found and processed successfully!');
     } catch (error) {
         console.error('Error fetching or processing jobs:', error);
     } finally {
