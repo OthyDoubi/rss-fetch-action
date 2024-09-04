@@ -18,23 +18,26 @@ async function fetchJobsAndNotify() {
         // Aller à l'URL spécifiée
         await page.goto(url, { waitUntil: 'networkidle2' });
 
-        // Injecter un script pour déclencher un événement une fois que les jobs sont chargés
+        // Injecter un script pour surveiller la présence des jobs
         await page.evaluate(() => {
             const checkJobsLoaded = setInterval(() => {
                 const jobs = document.querySelectorAll('.job-tile');
                 if (jobs.length > 0) {
-                    document.dispatchEvent(new Event('jobsLoaded'));
+                    document.body.setAttribute('data-jobs-loaded', 'true');
                     clearInterval(checkJobsLoaded);
                 }
             }, 1000);
         });
 
-        // Attendre que l'événement 'jobsLoaded' soit déclenché
-        await page.waitForEvent('jobsLoaded', { timeout: 120000 });
+        // Attendre que l'attribut `data-jobs-loaded` soit défini sur le corps de la page
+        await page.waitForFunction(
+            () => document.body.getAttribute('data-jobs-loaded') === 'true',
+            { timeout: 120000 }
+        );
 
         // Obtenir le contenu HTML de la page
         const html = await page.content();
-        fs.writeFileSync('pageContent.html', html); 
+        fs.writeFileSync('pageContent.html', html);
 
         const $ = cheerio.load(html);
         const jobs = [];
