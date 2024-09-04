@@ -13,7 +13,7 @@ async function fetchJobsAndNotify() {
         });
 
         const page = await browser.newPage();
-        await page.setDefaultNavigationTimeout(120000);
+        await page.setDefaultNavigationTimeout(1000000);
 
         // Aller à l'URL spécifiée
         await page.goto(url, { waitUntil: 'networkidle2' });
