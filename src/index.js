@@ -8,7 +8,7 @@ async function fetchJobsAndNotify() {
     let browser;
     try {
         browser = await puppeteer.launch({
-            headless: 'new', // Utilisez le nouveau mode headless
+            headless: 'new', 
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
 
@@ -18,44 +18,28 @@ async function fetchJobsAndNotify() {
         // Aller à l'URL spécifiée
         await page.goto(url, { waitUntil: 'networkidle2' });
 
-        // Ajouter un délai pour s'assurer que tout est bien chargé
-        await page.waitForTimeout(30000); // Délai supplémentaire de 30 secondes
+        // Injecter un script pour déclencher un événement une fois que les jobs sont chargés
+        await page.evaluate(() => {
+            const checkJobsLoaded = setInterval(() => {
+                const jobs = document.querySelectorAll('.job-tile');
+                if (jobs.length > 0) {
+                    document.dispatchEvent(new Event('jobsLoaded'));
+                    clearInterval(checkJobsLoaded);
+                }
+            }, 1000);
+        });
 
-        // Liste des sélecteurs possibles
-        const selectors = ['.up-job-card', '.job-listing', 'job-tile', '.job-listing-item'];
-
-        let activeSelector = null;
-
-        // Boucle pour trouver un sélecteur actif
-        for (const selector of selectors) {
-            const element = await page.$(selector);
-            if (element) {
-                activeSelector = selector;
-                console.log(`Selector found: ${selector}`);
-                break;
-            } else {
-                console.log(`Selector not found: ${selector}`);
-            }
-        }
-
-        if (!activeSelector) {
-            throw new Error("Aucun sélecteur actif trouvé sur la page.");
-        }
-
-        console.log(`Active selector found: ${activeSelector}`);
-
-        // Attendre que le sélecteur apparaisse avec un timeout augmenté
-        await page.waitForSelector(activeSelector, { timeout: 120000 });
+        // Attendre que l'événement 'jobsLoaded' soit déclenché
+        await page.waitForEvent('jobsLoaded', { timeout: 120000 });
 
         // Obtenir le contenu HTML de la page
         const html = await page.content();
-        fs.writeFileSync('pageContent.html', html); // Sauvegarder le HTML pour analyse
+        fs.writeFileSync('pageContent.html', html); 
 
         const $ = cheerio.load(html);
         const jobs = [];
 
-        // Extraire les informations des jobs
-        $(activeSelector).each((index, element) => {
+        $('.job-tile').each((index, element) => {
             const title = $(element).find('.job-title a').text().trim();
             const link = 'https://www.upwork.com' + $(element).find('.job-title a').attr('href');
             const description = $(element).find('.job-description').text().trim();
@@ -69,8 +53,6 @@ async function fetchJobsAndNotify() {
             console.log('No new jobs found.');
             return;
         }
-
-        // Générer un flux RSS (partie omise pour simplicité)
 
         console.log('Jobs found and processed successfully!');
     } catch (error) {
