@@ -1,9 +1,7 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
-const { WebClient } = require('@slack/web-api');
-const RSS = require('rss');
 const fs = require('fs');
+const RSS = require('rss');
+const { WebClient } = require('@slack/web-api');
 
 // Configuration
 const url = 'https://www.upwork.com/nx/search/jobs/?client_hires=1-9,10-&location=Canada&nbs=1&q=graphic%20designer&sort=recency';
@@ -13,7 +11,7 @@ async function fetchJobsAndNotify() {
     let browser;
     try {
         browser = await puppeteer.launch({
-            headless: 'new',
+            headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
 
@@ -29,46 +27,30 @@ async function fetchJobsAndNotify() {
         // Prendre une capture d'écran pour le débogage
         await page.screenshot({ path: 'debug.png' });
 
-        // Liste des sélecteurs possibles pour les offres d'emploi
-        const selectors = ['.up-job-card', '.job-listing', '.job-card', '.job-listing-item'];
+        // Utilisation de XPath pour rechercher les éléments des jobs
+        const jobElements = await page.$x('//div[contains(@class, "job-") or contains(@class, "listing")]');
 
-        // Trouver le sélecteur actif
-        let activeSelector = null;
-
-        for (const selector of selectors) {
-            const element = await page.$(selector);
-            if (element) {
-                activeSelector = selector;
-                break;
-            }
+        if (jobElements.length === 0) {
+            throw new Error("Les éléments de job n'ont pas été trouvés sur la page.");
         }
-
-        if (!activeSelector) {
-            throw new Error("Aucun sélecteur actif n'a été trouvé sur la page.");
-        }
-
-        console.log(`Active selector found: ${activeSelector}`);
-
-        // Attendre que le sélecteur actif apparaisse
-        await page.waitForSelector(activeSelector, { timeout: 120000 });
 
         // Obtenir le contenu HTML de la page
         const html = await page.content();
         fs.writeFileSync('pageContent.html', html); // Sauvegarder le HTML pour analyse
 
-        const $ = cheerio.load(html);
         const jobs = [];
 
-        // Extraire les informations des jobs en utilisant le sélecteur actif
-        $(activeSelector).each((index, element) => {
-            const title = $(element).find('.job-title a').text().trim();
-            const link = 'https://www.upwork.com' + $(element).find('.job-title a').attr('href');
-            const description = $(element).find('.job-description').text().trim();
+        // Extraire les informations des jobs à partir des éléments trouvés
+        for (const element of jobElements) {
+            const titleElement = await element.$x('.//a[contains(@class, "job-title")]');
+            const descriptionElement = await element.$x('.//div[contains(@class, "job-description")]');
 
-            if (title && link) {
-                jobs.push({ title, link, description });
-            }
-        });
+            const title = titleElement.length ? await (await titleElement[0].getProperty('textContent')).jsonValue() : 'No title';
+            const link = titleElement.length ? await (await titleElement[0].getProperty('href')).jsonValue() : '#';
+            const description = descriptionElement.length ? await (await descriptionElement[0].getProperty('textContent')).jsonValue() : 'No description';
+
+            jobs.push({ title: title.trim(), link: link.trim(), description: description.trim() });
+        }
 
         if (jobs.length === 0) {
             console.log('No new jobs found.');
