@@ -25,7 +25,7 @@ async function fetchJobsAndNotify() {
         await page.goto(url, { waitUntil: 'networkidle0' });
 
         // Attente de l'apparition des éléments avec un timeout de 60 secondes
-        await page.waitForSelector('.job-tile', { timeout: 60000 });
+        await page.waitForSelector('.job-tile', { timeout: 500000 });
 
         // Récupération du contenu HTML
         const html = await page.content();
