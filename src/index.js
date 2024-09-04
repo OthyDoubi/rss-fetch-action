@@ -26,10 +26,17 @@ async function fetchJobsAndNotify() {
         // Prendre une capture d'écran pour déboguer
         await page.screenshot({ path: 'screenshot.png' });
 
-        // Attendre que le sélecteur apparaisse
-        await page.waitForSelector('.job-tile', { timeout: 60000 });
+        // Vérifier si l'élément est chargé de manière asynchrone
+        try {
+            await page.waitForSelector('.job-tile', { timeout: 60000 });
+        } catch (error) {
+            console.log('Sélecteur .job-tile non trouvé. Tentative avec un autre sélecteur.');
 
-        // Obtenir le contenu HTML de la page et l'afficher pour déboguer
+            // Essayer un autre sélecteur potentiel, si nécessaire
+            await page.waitForSelector('.new-job-tile', { timeout: 60000 });
+        }
+
+        // Obtenir le contenu HTML de la page
         const html = await page.content();
         console.log(html);
 
@@ -37,7 +44,7 @@ async function fetchJobsAndNotify() {
         const jobs = [];
 
         // Extraire les informations des jobs
-        $('.job-tile').each((index, element) => {
+        $('.job-tile, .new-job-tile').each((index, element) => {
             const title = $(element).find('.job-title a').text().trim();
             const link = 'https://www.upwork.com' + $(element).find('.job-title a').attr('href');
             const description = $(element).find('.job-description').text().trim();
