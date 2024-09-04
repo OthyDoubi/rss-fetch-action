@@ -29,14 +29,28 @@ async function fetchJobsAndNotify() {
         // Prendre une capture d'écran pour le débogage
         await page.screenshot({ path: 'debug.png' });
 
-        // Attendre que le sélecteur apparaisse
-        const jobsExist = await page.$('.up-job-card, .job-listing');
-        if (!jobsExist) {
-            throw new Error("Les éléments de job n'ont pas été trouvés sur la page.");
+        // Liste des sélecteurs possibles pour les offres d'emploi
+        const selectors = ['.up-job-card', '.job-listing', '.job-card', '.job-listing-item'];
+
+        // Trouver le sélecteur actif
+        let activeSelector = null;
+
+        for (const selector of selectors) {
+            const element = await page.$(selector);
+            if (element) {
+                activeSelector = selector;
+                break;
+            }
         }
 
-        // Attendre que le sélecteur apparaisse avec un timeout augmenté
-        await page.waitForSelector('.up-job-card, .job-listing', { timeout: 120000 });
+        if (!activeSelector) {
+            throw new Error("Aucun sélecteur actif n'a été trouvé sur la page.");
+        }
+
+        console.log(`Active selector found: ${activeSelector}`);
+
+        // Attendre que le sélecteur actif apparaisse
+        await page.waitForSelector(activeSelector, { timeout: 120000 });
 
         // Obtenir le contenu HTML de la page
         const html = await page.content();
@@ -45,8 +59,8 @@ async function fetchJobsAndNotify() {
         const $ = cheerio.load(html);
         const jobs = [];
 
-        // Extraire les informations des jobs
-        $('.up-job-card, .job-listing').each((index, element) => {
+        // Extraire les informations des jobs en utilisant le sélecteur actif
+        $(activeSelector).each((index, element) => {
             const title = $(element).find('.job-title a').text().trim();
             const link = 'https://www.upwork.com' + $(element).find('.job-title a').attr('href');
             const description = $(element).find('.job-description').text().trim();
