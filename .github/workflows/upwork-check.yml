@@ -1,7 +1,9 @@
 name: Fetch and Notify
 
 on:
-  workflow_dispatch:
+  schedule:
+   # - cron: '*/1 * * * *'  # Exécuter toutes les minutes
+  workflow_dispatch:  # Permet de déclencher manuellement
 
 jobs:
   fetch-and-notify:
