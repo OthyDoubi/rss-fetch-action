@@ -13,7 +13,7 @@ async function fetchJobsAndNotify() {
     let browser;
     try {
         browser = await puppeteer.launch({
-            headless: 'new', 
+            headless: 'new',
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
 
@@ -23,25 +23,26 @@ async function fetchJobsAndNotify() {
         // Aller à l'URL spécifiée
         await page.goto(url, { waitUntil: 'networkidle2' });
 
-        // Attendre un moment pour s'assurer que tous les éléments sont chargés
-        await page.waitForTimeout(5000);
+        // Prendre une capture d'écran pour déboguer
+        await page.screenshot({ path: 'screenshot.png' });
 
-        // Vérifier si le sélecteur est présent
-        const isSelectorPresent = await page.evaluate(() => {
-            return document.querySelector('.job-tile') !== null;
-        });
-
-        if (!isSelectorPresent) {
-            console.error('Le sélecteur `.job-tile` n\'a pas été trouvé.');
+        // Essayer un sélecteur plus général
+        try {
+            await page.waitForSelector('div[class^="job-"]', { timeout: 60000 });
+        } catch (error) {
+            console.log('Sélecteur général `div[class^="job-"]` non trouvé.');
             return;
         }
 
-        // Extraire les informations des jobs
+        // Obtenir le contenu HTML de la page et l'afficher pour déboguer
         const html = await page.content();
+        console.log(html);
+
         const $ = cheerio.load(html);
         const jobs = [];
 
-        $('.job-tile').each((index, element) => {
+        // Extraire les informations des jobs
+        $('div[class^="job-"]').each((index, element) => {
             const title = $(element).find('.job-title a').text().trim();
             const link = 'https://www.upwork.com' + $(element).find('.job-title a').attr('href');
             const description = $(element).find('.job-description').text().trim();
