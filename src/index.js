@@ -23,15 +23,24 @@ async function fetchJobsAndNotify() {
         // Aller à l'URL spécifiée
         await page.goto(url, { waitUntil: 'networkidle2' });
 
-        // Prendre une capture d'écran pour déboguer
-        await page.screenshot({ path: 'screenshot.png' });
+        // Ajouter un délai pour s'assurer que tout est bien chargé
+        await page.waitForTimeout(30000); // Délai supplémentaire de 30 secondes
 
-        // Utiliser le nouveau sélecteur trouvé
-        await page.waitForSelector('.up-job-card, .job-listing', { timeout: 60000 });
+        // Prendre une capture d'écran pour le débogage
+        await page.screenshot({ path: 'debug.png' });
 
-        // Obtenir le contenu HTML de la page et l'afficher pour déboguer
+        // Attendre que le sélecteur apparaisse
+        const jobsExist = await page.$('.up-job-card, .job-listing');
+        if (!jobsExist) {
+            throw new Error("Les éléments de job n'ont pas été trouvés sur la page.");
+        }
+
+        // Attendre que le sélecteur apparaisse avec un timeout augmenté
+        await page.waitForSelector('.up-job-card, .job-listing', { timeout: 120000 });
+
+        // Obtenir le contenu HTML de la page
         const html = await page.content();
-        console.log(html);
+        fs.writeFileSync('pageContent.html', html); // Sauvegarder le HTML pour analyse
 
         const $ = cheerio.load(html);
         const jobs = [];
